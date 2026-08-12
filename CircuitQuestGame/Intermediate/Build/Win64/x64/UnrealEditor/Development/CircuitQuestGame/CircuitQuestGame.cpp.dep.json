@@ -1,0 +1,14 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "c:\\users\\iyara\\onedrive\\desktop\\seniorproject\\circuitquest\\circuitquestgame\\source\\circuitquestgame\\circuitquestgame.cpp",
+        "ProvidedModule": "",
+        "PCH": "c:\\users\\iyara\\onedrive\\desktop\\seniorproject\\circuitquest\\circuitquestgame\\intermediate\\build\\win64\\x64\\circuitquestgameeditor\\development\\unrealed\\sharedpch.unrealed.project.valapi.valexpapi.cpp20.h.pch",
+        "Includes": [
+            "c:\\users\\iyara\\onedrive\\desktop\\seniorproject\\circuitquest\\circuitquestgame\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\circuitquestgame\\definitions.circuitquestgame.h",
+            "c:\\users\\iyara\\onedrive\\desktop\\seniorproject\\circuitquest\\circuitquestgame\\source\\circuitquestgame\\circuitquestgame.h"
+        ],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}

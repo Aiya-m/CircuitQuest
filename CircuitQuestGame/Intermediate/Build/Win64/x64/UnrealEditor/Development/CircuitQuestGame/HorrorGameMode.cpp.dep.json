@@ -1,0 +1,19 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "c:\\users\\iyara\\onedrive\\desktop\\seniorproject\\circuitquest\\circuitquestgame\\source\\circuitquestgame\\variant_horror\\horrorgamemode.cpp",
+        "ProvidedModule": "",
+        "PCH": "c:\\users\\iyara\\onedrive\\desktop\\seniorproject\\circuitquest\\circuitquestgame\\intermediate\\build\\win64\\x64\\circuitquestgameeditor\\development\\unrealed\\sharedpch.unrealed.project.valapi.valexpapi.cpp20.h.pch",
+        "Includes": [
+            "c:\\users\\iyara\\onedrive\\desktop\\seniorproject\\circuitquest\\circuitquestgame\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\circuitquestgame\\definitions.circuitquestgame.h",
+            "c:\\users\\iyara\\onedrive\\desktop\\seniorproject\\circuitquest\\circuitquestgame\\source\\circuitquestgame\\variant_horror\\horrorgamemode.h",
+            "c:\\program files\\epic games\\ue_5.7\\engine\\source\\runtime\\engine\\classes\\gameframework\\gamemodebase.h",
+            "c:\\program files\\epic games\\ue_5.7\\engine\\source\\runtime\\engine\\classes\\engine\\serverstatreplicator.h",
+            "c:\\program files\\epic games\\ue_5.7\\engine\\intermediate\\build\\win64\\unrealeditor\\inc\\engine\\uht\\serverstatreplicator.generated.h",
+            "c:\\program files\\epic games\\ue_5.7\\engine\\intermediate\\build\\win64\\unrealeditor\\inc\\engine\\uht\\gamemodebase.generated.h",
+            "c:\\users\\iyara\\onedrive\\desktop\\seniorproject\\circuitquest\\circuitquestgame\\intermediate\\build\\win64\\unrealeditor\\inc\\circuitquestgame\\uht\\horrorgamemode.generated.h"
+        ],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}

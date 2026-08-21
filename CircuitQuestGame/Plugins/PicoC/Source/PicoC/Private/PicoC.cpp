@@ -59,30 +59,30 @@ void BridgeName(struct ParseState *Parser, struct Value *ReturnValue, struct Val
 MAKE_BRIDGE_1ARGS(Bridge_delay, OnDelay);
 MAKE_BRIDGE_2ARGS(Bridge_digitalWrite, OnDigitalWrite);
 
-// #pragma warning(push)
-// #pragma warning(disable: 4611)
-// // only c language in here
-// extern "C" static bool ParsePicoCHeader_Safe(Picoc* pc, const char* HeaderName, const char* SourceCode)
-// {
-// 	if (setjmp(pc->PicocExitBuf) != 0)
-// 	{
-// 		return false;
-// 	}
-//
-// 	PicocParse(
-// 		pc, 
-// 		HeaderName, 
-// 		SourceCode, 
-// 		strlen(SourceCode), 
-// 		TRUE, 
-// 		FALSE, 
-// 		FALSE, 
-// 		TRUE
-// 	);
-//
-// 	return true;
-// }
-// #pragma warning(pop)
+#pragma warning(push)
+#pragma warning(disable: 4611)
+// only c language in here
+extern "C" static bool ParsePicoCHeader_Safe(Picoc* pc, const char* HeaderName, const char* SourceCode)
+{
+	if (setjmp(pc->PicocExitBuf) != 0)
+	{
+		return false;
+	}
+
+	PicocParse(
+		pc, 
+		HeaderName, 
+		SourceCode, 
+		strlen(SourceCode), 
+		TRUE, 
+		FALSE, 
+		FALSE, 
+		TRUE
+	);
+
+	return true;
+}
+#pragma warning(pop)
 
 void FPicoCModule::StartupModule()
 {
@@ -93,44 +93,44 @@ void FPicoCModule::StartupModule()
 	// setvbuf(stdout, NULL, _IONBF, 0);
 	// setvbuf(stderr, NULL, _IONBF, 0);
 	
-	// PicocInitialise(&PCState, 512000);
-	// UE_LOG(LogTemp, Warning, TEXT("PCState: %p"), &PCState);
-	//
- // 	// Register Bridge Function to PicoC's table
-	// static LibraryFunction ArduinoFuncLib[] =
-	// {
-	// 	{Bridge_delay, "void delay(int);"},
-	// 	{ Bridge_digitalWrite, "void digitalWrite(int, int);" },
-	// 	{ NULL, NULL }
-	// };
-	// // IncludeRegister(PCState, "ArduinoFuncLib", )
-	//
-	// LibraryAdd(&PCState, &PCState.GlobalTable, "ArduinoFuncLib", ArduinoFuncLib);
-	// UE_LOG(LogTemp, Warning, TEXT("Library registered"));
- // 	// define constant value
-	// const char* ArduinoHeader = 
-	// 	"#define LOW 0\n"
-	// 	"#define HIGH 1\n"
-	// 	"#define INPUT 0\n"
-	// 	"#define OUTPUT 1\n"
-	// 	"#define INPUT_PULLUP 2\n";
-	//
-	// bool bSuccess = ParsePicoCHeader_Safe(&PCState, "Arduino_Definitions", ArduinoHeader);
-	// if (bSuccess)
-	// {
-	// 	UE_LOG(LogTemp, Warning, TEXT("Arduino Constants Defined Successfully!"));
-	// }
-	// else
-	// {
-	// 	UE_LOG(LogTemp, Error, TEXT("Failed to parse Arduino Constants!"));
-	// }
+	PicocInitialise(&PCState, 512000);
+	UE_LOG(LogTemp, Warning, TEXT("PCState: %p"), &PCState);
+	
+ 	// Register Bridge Function to PicoC's table
+	static LibraryFunction ArduinoFuncLib[] =
+	{
+		{Bridge_delay, "void delay(int);"},
+		{ Bridge_digitalWrite, "void digitalWrite(int, int);" },
+		{ NULL, NULL }
+	};
+	// IncludeRegister(PCState, "ArduinoFuncLib", )
+	
+	LibraryAdd(&PCState, &PCState.GlobalTable, "ArduinoFuncLib", ArduinoFuncLib);
+	UE_LOG(LogTemp, Warning, TEXT("Library registered"));
+ 	// define constant value
+	const char* ArduinoHeader = 
+		"#define LOW 0\n"
+		"#define HIGH 1\n"
+		"#define INPUT 0\n"
+		"#define OUTPUT 1\n"
+		"#define INPUT_PULLUP 2\n";
+	
+	bool bSuccess = ParsePicoCHeader_Safe(&PCState, "Arduino_Definitions", ArduinoHeader);
+	if (bSuccess)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Arduino Constants Defined Successfully!"));
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to parse Arduino Constants!"));
+	}
 	
 	// Test PicoC Lib
-	struct Picoc_Struct pc;
-	FMemory::Memzero(&pc, sizeof(struct Picoc_Struct)); 
-	
-	PicocInitialise(&pc, 512000); 
-	PicocCleanup(&pc);
+	// struct Picoc_Struct pc;
+	// FMemory::Memzero(&pc, sizeof(struct Picoc_Struct)); 
+	//
+	// PicocInitialise(&pc, 512000); 
+	// PicocCleanup(&pc);
 
 	UE_LOG(LogTemp, Warning, TEXT("PicoC with Platform Linked Successfully!"));
 }
@@ -145,15 +145,15 @@ void FPicoCModule::Compile(const FString& Code)
 	
 	// setvbuf(stdout, NULL, _IONBF, 0);
 
-	// PicocParse(
-	// 	&PCState,
-	// 	"Test",
-	// 	TestCode,
-	// 	strlen(TestCode),
-	// 	true,
-	// 	true,
-	// 	false,
-	// 	true);
+	PicocParse(
+		&PCState,
+		"Test",
+		TestCode,
+		strlen(TestCode),
+		true,
+		true,
+		false,
+		true);
 	UE_LOG(LogTemp, Warning, TEXT("Picoc Module (Compile): Compile completed"));
 }
 

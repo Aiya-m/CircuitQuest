@@ -21,7 +21,7 @@ public class CircuitQuestGame : ModuleRules
 			"Slate"
 		});
 
-		PrivateDependencyModuleNames.AddRange(new string[] { });
+		PrivateDependencyModuleNames.AddRange(new string[] { "PicoC" });
 
 		PublicIncludePaths.AddRange(new string[] {
 			"CircuitQuestGame",

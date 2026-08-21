@@ -20,22 +20,19 @@ public:
 	UPROPERTY(meta = (BindWidget), BlueprintReadOnly)
 	class UMultiLineEditableTextBox* CodingSection;
 	
-	// UFUNCTION(BlueprintCallable, Category = "IDE Logic")
-	// void CodeToPicoC();
-	//
-	// UFUNCTION(BlueprintCallable, Category = "IDE Logic")
-	// TMap<FString, int32> GetCodeResults();
+	UFUNCTION(BlueprintCallable, Category = "IDE Logic")
+	void CodeToPicoC();
 	
-	// Arduino function
-	// virtual void DigitalWrite(int32 Pin, int32 Value) override;
+	UFUNCTION(BlueprintCallable, Category = "IDE Logic")
+	TMap<FString, int32> GetCodeResults();
 
 protected:
-	// virtual void NativeConstruct() override;
-	// virtual void NativeDestruct() override;
-	//
-	// void DigitalWriteFunction(int32 Pin, int32 Value);
-	// void DelayFunction(int32 time);
+	virtual void NativeConstruct() override;
+	virtual void NativeDestruct() override;
+	
+	void DigitalWriteFunction(int32 Pin, int32 Value);
+	void DelayFunction(int32 time);
 	
 private:
-	// TMap<FString, int32> Results;
+	TMap<FString, int32> Results;
 };

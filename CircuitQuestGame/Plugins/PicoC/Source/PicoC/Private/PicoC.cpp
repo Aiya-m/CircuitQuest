@@ -12,10 +12,14 @@ extern "C"
 	#include "PicoCLibrary/interpreter.h"
 	#include "setjmp.h"
 }
+static Picoc PCState;
+static bool bIsPicoCInitialized;
 
 FOneFunctionDelegate FPicoCModule::OnDelay;
+FOneFunctionDelegate FPicoCModule::OnDigitalRead;
 FTwoFunctionDelegate FPicoCModule::OnDigitalWrite;
-static Picoc PCState;
+FTwoFunctionDelegate FPicoCModule::OnPinMode;
+bool FPicoCModule::bIsRunning = false;
 
 #define LOCTEXT_NAMESPACE "FPicoCModule"
 
@@ -37,7 +41,12 @@ void BridgeName(struct ParseState *Parser, struct Value *ReturnValue, struct Val
 		UE_LOG(LogTemp, Error, TEXT("Arduino Bridge -> %s: is not bound!"), TEXT(#DelegateName)); \
 		return; \
 	} \
-	FPicoCModule::DelegateName.ExecuteIfBound(Arg1); \
+	if (FCString::Strcmp(TEXT(#DelegateName), TEXT("OnDelay")) == 0) \
+	{ \
+		FPlatformProcess::Sleep(Arg1 / 1000.0f); \
+	} else { \
+		FPicoCModule::DelegateName.ExecuteIfBound(Arg1); \
+	} \
 }
 
 // Macro Template for function 2 args
@@ -57,7 +66,9 @@ void BridgeName(struct ParseState *Parser, struct Value *ReturnValue, struct Val
 }
 
 MAKE_BRIDGE_1ARGS(Bridge_delay, OnDelay);
+MAKE_BRIDGE_1ARGS(Bridge_digitalRead, OnDigitalRead);
 MAKE_BRIDGE_2ARGS(Bridge_digitalWrite, OnDigitalWrite);
+MAKE_BRIDGE_2ARGS(Bridge_pinMode, OnPinMode);
 
 #pragma warning(push)
 #pragma warning(disable: 4611)
@@ -77,44 +88,42 @@ extern "C" static bool ParsePicoCHeader_Safe(Picoc* pc, const char* HeaderName, 
 		TRUE, 
 		FALSE, 
 		FALSE, 
-		TRUE
+		false
 	);
 
 	return true;
 }
 #pragma warning(pop)
 
-void FPicoCModule::StartupModule()
+static void InitPicoCEnvironment()
 {
- 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
+	if (bIsPicoCInitialized)
+	{
+		PicocCleanup(&PCState);
+		bIsPicoCInitialized = false;
+	}
 
-	UE_LOG(LogTemp, Warning, TEXT("PicoC Module Started Successfully!"));
-	
-	// setvbuf(stdout, NULL, _IONBF, 0);
-	// setvbuf(stderr, NULL, _IONBF, 0);
-	
 	PicocInitialise(&PCState, 512000);
+	bIsPicoCInitialized = true;
 	UE_LOG(LogTemp, Warning, TEXT("PCState: %p"), &PCState);
-	
- 	// Register Bridge Function to PicoC's table
+
 	static LibraryFunction ArduinoFuncLib[] =
 	{
-		{Bridge_delay, "void delay(int);"},
-		{ Bridge_digitalWrite, "void digitalWrite(int, int);" },
-		{ NULL, NULL }
+		{Bridge_delay, "void delay(int);" },
+		{Bridge_digitalWrite, "void digitalWrite(int, int);" },
+		{Bridge_pinMode, "void pinMode(int, int);" },
+		{Bridge_digitalRead, "bool digitalRead(int);" },
+		{NULL, NULL }
 	};
-	// IncludeRegister(PCState, "ArduinoFuncLib", )
-	
 	LibraryAdd(&PCState, &PCState.GlobalTable, "ArduinoFuncLib", ArduinoFuncLib);
-	UE_LOG(LogTemp, Warning, TEXT("Library registered"));
- 	// define constant value
+
 	const char* ArduinoHeader = 
-		"#define LOW 0\n"
-		"#define HIGH 1\n"
-		"#define INPUT 0\n"
-		"#define OUTPUT 1\n"
-		"#define INPUT_PULLUP 2\n";
-	
+	   "#define LOW 0\n"
+	   "#define HIGH 1\n"
+	   "#define INPUT 0\n"
+	   "#define OUTPUT 1\n"
+	   "#define INPUT_PULLUP 2\n";
+    
 	bool bSuccess = ParsePicoCHeader_Safe(&PCState, "Arduino_Definitions", ArduinoHeader);
 	if (bSuccess)
 	{
@@ -124,6 +133,14 @@ void FPicoCModule::StartupModule()
 	{
 		UE_LOG(LogTemp, Error, TEXT("Failed to parse Arduino Constants!"));
 	}
+}
+
+void FPicoCModule::StartupModule()
+{
+ 	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
+
+	UE_LOG(LogTemp, Warning, TEXT("PicoC Module Started Successfully!"));
+	InitPicoCEnvironment();
 	
 	// Test PicoC Lib
 	// struct Picoc_Struct pc;
@@ -135,33 +152,96 @@ void FPicoCModule::StartupModule()
 	UE_LOG(LogTemp, Warning, TEXT("PicoC with Platform Linked Successfully!"));
 }
 
+bool IsHasFunction(Picoc* pc, const char* FunctionName)
+{
+	struct Value* FuncVal = NULL;
+	return TableGet(&pc->GlobalTable, TableStrRegister(pc, FunctionName), &FuncVal, NULL, NULL, NULL) != 0;
+}
+
 void FPicoCModule::Compile(const FString& Code)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Picoc Module (Compile): in Compile function"));
-	// FTCHARToUTF8 UTF8(*Code);
-	
-	FTCHARToUTF8 ConvertedCode(*Code);
-	const char* TestCode = ConvertedCode.Get();
-	
-	// setvbuf(stdout, NULL, _IONBF, 0);
+	AsyncTask(ENamedThreads::AnyBackgroundThreadNormalTask, [this, Code]()
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Picoc Module (Compile): in Compile function"));
+		InitPicoCEnvironment();
+		bIsRunning = false;
+		// FTCHARToUTF8 UTF8(*Code);
+		
+		FTCHARToUTF8 ConvertedCode(*Code);
+		const char* TestCode = ConvertedCode.Get();
+		
+		// bool bHasSetup = Code.Contains(TEXT("void setup"));
+		// UE_LOG(LogTemp, Warning, TEXT("%hhd"), bHasSetup);
+		
+		
+		if (!ParsePicoCHeader_Safe(&PCState, "UserCode", TestCode))
+		{
+			UE_LOG(LogTemp, Error, TEXT("PicoC Compile Error!"));
+			return;
+		}
+		
+		const char* runSetup = "setup();";
+		if (IsHasFunction(&PCState, "setup"))
+		{
+			if (!ParsePicoCHeader_Safe(&PCState, "setup", runSetup))
+			{
+				UE_LOG(LogTemp, Error, TEXT("PicoC setup() Execution Error!"));
+				return;
+			}
+		} else
+		{
+			UE_LOG(LogTemp, Error, TEXT("No setup() Function!"));
+		}
+			
+		bIsRunning = true;
+		UE_LOG(LogTemp, Warning, TEXT("Picoc Module (Compile): Compile completed"));
+	});
+}
 
-	PicocParse(
-		&PCState,
-		"Test",
-		TestCode,
-		strlen(TestCode),
-		true,
-		true,
-		false,
-		true);
-	UE_LOG(LogTemp, Warning, TEXT("Picoc Module (Compile): Compile completed"));
+bool FPicoCModule::IsRunning() const
+{
+	return bIsRunning;
+}
+
+void FPicoCModule::RunLoop()
+{
+	if (!bIsRunning || !bIsPicoCInitialized)
+	{
+		return;
+	}
+	
+	const char* runLoop = "loop();";
+	if (IsHasFunction(&PCState, "loop"))
+	{
+		if (!ParsePicoCHeader_Safe(&PCState, "loop", runLoop))
+        	{
+        		UE_LOG(LogTemp, Error, TEXT("PicoC Runtime Error inside loop()! Stopping."));
+        		Stop();
+        	}
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("No loop() Function! Stopping."));
+		Stop();
+	}
+	
+}
+
+void FPicoCModule::Stop()
+{
+	bIsRunning = false;
+	UE_LOG(LogTemp, Warning, TEXT("PicoC: Execution stopped."));
 }
 
 void FPicoCModule::ShutdownModule()
 {
 	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
 	// we call this function before unloading the module.
-	PicocCleanup(&PCState);
+	if (bIsPicoCInitialized)
+	{
+		PicocCleanup(&PCState);
+		bIsPicoCInitialized = false;
+	}
 
 	UE_LOG(LogTemp, Warning, TEXT("PicoC Module Shutdown Successfully!"));
 }

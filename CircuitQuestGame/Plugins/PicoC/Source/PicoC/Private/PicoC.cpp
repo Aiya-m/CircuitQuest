@@ -13,7 +13,7 @@ extern "C"
 	#include "setjmp.h"
 }
 static Picoc PCState;
-static bool bIsPicoCInitialized;
+static bool bIsPicoCInitialized = false;
 
 FOneFunctionDelegate FPicoCModule::OnDelay;
 FOneFunctionDelegate FPicoCModule::OnDigitalRead;
@@ -97,12 +97,15 @@ extern "C" static bool ParsePicoCHeader_Safe(Picoc* pc, const char* HeaderName, 
 
 static void InitPicoCEnvironment()
 {
+	UE_LOG(LogTemp, Warning, TEXT("PicoC Module creating..."));
+	
 	if (bIsPicoCInitialized)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("Cleaning up previous PicoC State..."));
 		PicocCleanup(&PCState);
 		bIsPicoCInitialized = false;
 	}
-
+	
 	PicocInitialise(&PCState, 512000);
 	bIsPicoCInitialized = true;
 	UE_LOG(LogTemp, Warning, TEXT("PCState: %p"), &PCState);
@@ -112,11 +115,11 @@ static void InitPicoCEnvironment()
 		{Bridge_delay, "void delay(int);" },
 		{Bridge_digitalWrite, "void digitalWrite(int, int);" },
 		{Bridge_pinMode, "void pinMode(int, int);" },
-		{Bridge_digitalRead, "bool digitalRead(int);" },
+		{Bridge_digitalRead, "int digitalRead(int);" },
 		{NULL, NULL }
 	};
 	LibraryAdd(&PCState, &PCState.GlobalTable, "ArduinoFuncLib", ArduinoFuncLib);
-
+	
 	const char* ArduinoHeader = 
 	   "#define LOW 0\n"
 	   "#define HIGH 1\n"
@@ -141,6 +144,7 @@ void FPicoCModule::StartupModule()
 
 	UE_LOG(LogTemp, Warning, TEXT("PicoC Module Started Successfully!"));
 	InitPicoCEnvironment();
+	// InitPicoCEnvironment();
 	
 	// Test PicoC Lib
 	// struct Picoc_Struct pc;

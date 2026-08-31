@@ -3,15 +3,42 @@
 
 #include "WBP_IDE.h"
 #include "PicoC.h"
+#include "TaskSyncManager.h"
 
+void UWBP_IDE::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+{
+	Super::NativeTick(MyGeometry, InDeltaTime);
+
+	// static float AccumulatedTime = 0.0f;
+	// AccumulatedTime += InDeltaTime;
+	//
+	// if (AccumulatedTime >= 0.05f)
+	// {
+	// 	AccumulatedTime = 0.0f;
+	//
+	// 	FPicoCModule& PicoCModule = FModuleManager::GetModuleChecked<FPicoCModule>("PicoC");
+	// 	if (PicoCModule.IsRunning())
+	// 	{
+	// 		PicoCModule.RunLoop();
+	// 	}
+	// }
+	
+	FPicoCModule& PicoCModule = FModuleManager::GetModuleChecked<FPicoCModule>("PicoC");
+	if (PicoCModule.IsRunning())
+	{
+		PicoCModule.RunLoop();
+	}
+}
 void UWBP_IDE::NativeConstruct()
 {
 	Super::NativeConstruct();
 	
-	// FPicoCModule::SetBridge(this);
+	// ResetCodeTemplate();
 	
-	FPicoCModule::OnDigitalWrite.BindUObject(this, &UWBP_IDE::DigitalWriteFunction);
 	FPicoCModule::OnDelay.BindUObject(this, &UWBP_IDE::DelayFunction);
+	FPicoCModule::OnDigitalRead.BindUObject(this, &UWBP_IDE::DigitalReadFuction);
+	FPicoCModule::OnDigitalWrite.BindUObject(this, &UWBP_IDE::DigitalWriteFunction);
+	FPicoCModule::OnPinMode.BindUObject(this, &UWBP_IDE::PinModeFunction);
 }
 
 void UWBP_IDE::NativeDestruct()
@@ -21,6 +48,15 @@ void UWBP_IDE::NativeDestruct()
 	FPicoCModule::OnDigitalWrite.Unbind();
 
 	Super::NativeDestruct();
+}
+
+void UWBP_IDE::ResetCodeTemplate()
+{
+	if (CodingSection)
+	{
+		FString TemplateCode = TEXT("void setup() {\n  // put your setup code here, to run once:\n}\n\nvoid loop() {\n  // put your main code here, to run repeatedly:\n}");
+		CodingSection->SetText(FText::FromString(TemplateCode));
+	}
 }
 
 void UWBP_IDE::CodeToPicoC()
@@ -54,12 +90,35 @@ TMap<FString, int32> UWBP_IDE::GetCodeResults()
 void UWBP_IDE::DelayFunction(int32 time)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Delay (cpp) time(ms): %d"), time);
-	Results.Add(TEXT("Delay"), time);
+	if (Delay.IsBound())
+	{
+		Delay.Broadcast(time);
+	}
 }
 
-void UWBP_IDE::DigitalWriteFunction(int32 Pin,int32 Value)
+void UWBP_IDE::DigitalWriteFunction(int32 pin,int32 value)
 {
-	UE_LOG(LogTemp, Warning, TEXT("DigitalWrite (cpp) Pin: %d -> Value: %d"), Pin, Value);
-	Results.Add(TEXT("digitalWrite_Pin"), Pin);
-	Results.Add(TEXT("digitalWrite_Value"), Value);
+	UE_LOG(LogTemp, Warning, TEXT("DigitalWrite (cpp) Pin: %d -> Value: %d"), pin, value);
+	if (DigitalWrite.IsBound())
+	{
+		DigitalWrite.Broadcast(pin, value);
+	}
+}
+
+void UWBP_IDE::PinModeFunction(int32 pin, int32 value)
+{
+	UE_LOG(LogTemp, Warning, TEXT("PinMode (cpp) Pin: %d -> Value: %d"), pin, value);
+	if (PinMode.IsBound())
+	{
+		PinMode.Broadcast(pin, value);
+	}
+}
+
+void UWBP_IDE::DigitalReadFuction(int32 pin)
+{
+	UE_LOG(LogTemp, Warning, TEXT("digitalRead (cpp) pin: %d"), pin);
+	if (DigitalRead.IsBound())
+	{
+		DigitalRead.Broadcast(pin);
+	}
 }

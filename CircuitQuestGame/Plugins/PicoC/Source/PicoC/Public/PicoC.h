@@ -22,12 +22,20 @@ public:
 	virtual void StartupModule() override;
 	virtual void ShutdownModule() override;
 	
+	bool IsRunning() const;
+	
 	void Compile(const FString& Code);
+	void RunLoop();
+	void Stop();
 	
 	// for delegate method
-	static FTwoFunctionDelegate OnDigitalWrite;
 	static FOneFunctionDelegate OnDelay;
+	static FOneFunctionDelegate OnDigitalRead;
+	static FTwoFunctionDelegate OnDigitalWrite;
+	static FTwoFunctionDelegate OnPinMode;
+	
 
 private:
 	/** Handle to the test dll we will load */
+	static bool bIsRunning;
 };

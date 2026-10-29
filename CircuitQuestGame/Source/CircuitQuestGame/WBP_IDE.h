@@ -51,7 +51,9 @@ protected:
 	void ResetCodeTemplate();
 	
 	void DelayFunction(int32 time);
-	void DigitalReadFuction(int32 pin);
+	int32 DigitalReadFuction(int32 pin);
+	UPROPERTY(BlueprintReadWrite)
+	int32 DigitalReadResult = 0;
 	void DigitalWriteFunction(int32 pin, int32 value);
 	void PinModeFunction(int32 pin, int32 value);
 	

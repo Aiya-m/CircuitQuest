@@ -114,11 +114,13 @@ void UWBP_IDE::PinModeFunction(int32 pin, int32 value)
 	}
 }
 
-void UWBP_IDE::DigitalReadFuction(int32 pin)
+int32 UWBP_IDE::DigitalReadFuction(int32 pin)
 {
 	UE_LOG(LogTemp, Warning, TEXT("digitalRead (cpp) pin: %d"), pin);
 	if (DigitalRead.IsBound())
 	{
 		DigitalRead.Broadcast(pin);
 	}
+	UE_LOG(LogTemp, Warning, TEXT("digitalRead (cpp) Return: %d"), DigitalReadResult);
+	return DigitalReadResult;
 }

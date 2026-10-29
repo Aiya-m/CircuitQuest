@@ -16,7 +16,7 @@ static Picoc PCState;
 static bool bIsPicoCInitialized = false;
 
 FOneFunctionDelegate FPicoCModule::OnDelay;
-FOneFunctionDelegate FPicoCModule::OnDigitalRead;
+FOneReturnDelegate FPicoCModule::OnDigitalRead;
 FTwoFunctionDelegate FPicoCModule::OnDigitalWrite;
 FTwoFunctionDelegate FPicoCModule::OnPinMode;
 bool FPicoCModule::bIsRunning = false;
@@ -49,6 +49,31 @@ void BridgeName(struct ParseState *Parser, struct Value *ReturnValue, struct Val
 	} \
 }
 
+#define MAKE_BRIDGE_1ARGS_RET_INT(BridgeName, DelegateName) \
+void BridgeName(struct ParseState* Parser, struct Value* ReturnValue, struct Value** Param, int NumArgs) \
+{ \
+	if (NumArgs < 1 || !Param || !Param[0] || !Param[0]->Val) \
+	{ \
+		UE_LOG(LogTemp, Error, TEXT("Missing argument!")); \
+		return; \
+	} \
+	\
+	int32 Arg1 = Param[0]->Val->Integer; \
+	\
+	if (!FPicoCModule::DelegateName.IsBound()) \
+	{ \
+		UE_LOG(LogTemp, Error, TEXT("Delegate is not bound!")); \
+		return; \
+	} \
+	\
+	int32 Result = FPicoCModule::DelegateName.Execute(Arg1); \
+	\
+	if (ReturnValue && ReturnValue->Val) \
+	{ \
+		ReturnValue->Val->Integer = Result; \
+	} \
+}
+
 // Macro Template for function 2 args
 #define MAKE_BRIDGE_2ARGS(BridgeName, DelegateName) \
 void BridgeName(struct ParseState *Parser, struct Value *ReturnValue, struct Value **Param, int NumArgs) \
@@ -66,7 +91,7 @@ void BridgeName(struct ParseState *Parser, struct Value *ReturnValue, struct Val
 }
 
 MAKE_BRIDGE_1ARGS(Bridge_delay, OnDelay);
-MAKE_BRIDGE_1ARGS(Bridge_digitalRead, OnDigitalRead);
+MAKE_BRIDGE_1ARGS_RET_INT(Bridge_digitalRead, OnDigitalRead);
 MAKE_BRIDGE_2ARGS(Bridge_digitalWrite, OnDigitalWrite);
 MAKE_BRIDGE_2ARGS(Bridge_pinMode, OnPinMode);
 

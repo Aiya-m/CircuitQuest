@@ -8,6 +8,7 @@
 typedef void (*PicoCFuncPtr)(struct ParseState *Parser, struct Value *ReTurnValue, struct Value **Param, int NumParam);
 
 DECLARE_DELEGATE_OneParam(FOneFunctionDelegate, int32);
+DECLARE_DELEGATE_RetVal_OneParam(int32,	FOneReturnDelegate,	int32);
 DECLARE_DELEGATE_TwoParams(FTwoFunctionDelegate, int32, int32);
 
 class PICOC_API FPicoCModule : public IModuleInterface
@@ -30,7 +31,7 @@ public:
 	
 	// for delegate method
 	static FOneFunctionDelegate OnDelay;
-	static FOneFunctionDelegate OnDigitalRead;
+	static FOneReturnDelegate OnDigitalRead;
 	static FTwoFunctionDelegate OnDigitalWrite;
 	static FTwoFunctionDelegate OnPinMode;
 	
